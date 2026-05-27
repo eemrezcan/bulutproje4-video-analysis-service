@@ -16,4 +16,6 @@ coverage.xml
 media/*.mp4
 media/*.mov
 media/*.avi
-
+app/media/*.mp4
+app/media/*.mov
+app/media/*.avi

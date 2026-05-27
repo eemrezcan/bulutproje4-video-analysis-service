@@ -1,14 +1,37 @@
-import os
+from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 
-app = FastAPI(title="Video Analysis Service", version="0.1.0")
+from app.api.routes import router
+from app.core.config import settings
+from app.core.lifecycle import startup, shutdown
 
 
-@app.get("/health")
-def health() -> dict[str, str]:
-    return {
-        "service": os.getenv("SERVICE_NAME", "video-analysis-service"),
-        "status": "ok",
-    }
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    await startup()
+    try:
+        yield
+    finally:
+        await shutdown()
 
+
+app = FastAPI(
+    title="Video Analysis Service",
+    version="1.0.0",
+    description="Smart city camera stream and video analysis simulation service.",
+    lifespan=lifespan,
+)
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=settings.cors_origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+app.mount("/media", StaticFiles(directory=str(settings.media_dir)), name="media")
+app.include_router(router)
