@@ -47,7 +47,7 @@ class CameraService:
         self.repository = repository
 
     async def seed_cameras(self) -> list[Camera]:
-        stream_url = f"{settings.public_base_url}/media/{settings.synthetic_video_path.name}"
+        stream_url = f"{settings.public_base_url}/media/{self._stream_path().name}"
         cameras = [
             Camera(
                 **seed,
@@ -69,14 +69,21 @@ class CameraService:
         camera = await self.get_camera(camera_id)
         if not camera:
             return None
+        stream_path = self._stream_path()
         return StreamInfo(
             camera_id=camera.camera_id,
             zone=camera.zone,
-            stream_url=camera.stream_url,
-            media_type="video/mp4",
-            mode="looped_synthetic_mp4",
+            stream_url=f"{settings.public_base_url}/media/{stream_path.name}",
+            media_type="video/webm" if stream_path.suffix == ".webm" else "video/mp4",
+            mode=f"looped_synthetic_{stream_path.suffix.lstrip('.')}",
             playable=playable,
             note=None
             if playable
-            else "Synthetic MP4 could not be created; stream metadata is still stable.",
+            else "Synthetic video could not be created; stream metadata is still stable.",
         )
+
+    @staticmethod
+    def _stream_path():
+        if settings.synthetic_webm_path.exists() and settings.synthetic_webm_path.stat().st_size > 0:
+            return settings.synthetic_webm_path
+        return settings.synthetic_video_path

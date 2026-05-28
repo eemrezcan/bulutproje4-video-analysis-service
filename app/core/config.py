@@ -23,6 +23,7 @@ class Settings:
     app_dir: Path = Path(__file__).resolve().parents[1]
     media_dir: Path = app_dir / "media"
     synthetic_video_path: Path = media_dir / "synthetic_city_loop.mp4"
+    synthetic_webm_path: Path = media_dir / "synthetic_city_loop.webm"
     cors_origins: list[str] = [
         origin.strip()
         for origin in os.getenv(

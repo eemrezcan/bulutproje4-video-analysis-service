@@ -12,9 +12,11 @@ def ensure_synthetic_video(path: Path) -> bool:
     width, height = 960, 540
     fps = 24
     frame_count = fps * 12
+    suffix = path.suffix.lower()
+    fourcc = "VP80" if suffix == ".webm" else "mp4v"
     writer = cv2.VideoWriter(
         str(path),
-        cv2.VideoWriter_fourcc(*"mp4v"),
+        cv2.VideoWriter_fourcc(*fourcc),
         fps,
         (width, height),
     )

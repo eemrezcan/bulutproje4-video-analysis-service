@@ -20,7 +20,9 @@ async def startup() -> None:
     global synthetic_video_ready
     await wait_until_ready()
     await create_tables()
-    synthetic_video_ready = ensure_synthetic_video(settings.synthetic_video_path)
+    mp4_ready = ensure_synthetic_video(settings.synthetic_video_path)
+    webm_ready = ensure_synthetic_video(settings.synthetic_webm_path)
+    synthetic_video_ready = webm_ready or mp4_ready
     await camera_service.seed_cameras()
     await analyzer_worker.start()
 
