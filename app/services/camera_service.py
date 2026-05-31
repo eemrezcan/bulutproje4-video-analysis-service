@@ -1,3 +1,6 @@
+from pathlib import Path
+
+from app.analyzer.synthetic_video import ensure_synthetic_video
 from app.core.config import settings
 from app.models.schemas import Camera, StreamInfo
 from app.repositories.camera_repository import CameraRepository
@@ -41,17 +44,61 @@ CAMERA_SEED = [
     },
 ]
 
+CAMERA_STREAM_VARIANTS = {
+    "cam_meydan_01": {
+        "title": "Meydan Ana Kamera",
+        "accent_color": (50, 130, 210),
+        "pedestrian_count": 44,
+        "speed_offset": 0,
+    },
+    "cam_otogar_01": {
+        "title": "Otogar Giris Kamera",
+        "accent_color": (210, 120, 55),
+        "pedestrian_count": 30,
+        "speed_offset": 1,
+    },
+    "cam_kampus_01": {
+        "title": "Kampus Meydan Kamera",
+        "accent_color": (90, 175, 110),
+        "pedestrian_count": 36,
+        "speed_offset": 2,
+    },
+    "cam_hastane_01": {
+        "title": "Hastane Acil Kamera",
+        "accent_color": (70, 170, 230),
+        "pedestrian_count": 24,
+        "speed_offset": 1,
+    },
+    "cam_sanayi_01": {
+        "title": "Sanayi Bulvari Kamera",
+        "accent_color": (150, 110, 210),
+        "pedestrian_count": 18,
+        "speed_offset": 3,
+    },
+}
+
 
 class CameraService:
     def __init__(self, repository: CameraRepository) -> None:
         self.repository = repository
 
+    async def ensure_stream_media(self) -> None:
+        for seed in CAMERA_SEED:
+            camera_id = seed["camera_id"]
+            variant = CAMERA_STREAM_VARIANTS[camera_id]
+            ensure_synthetic_video(
+                self._camera_webm_path(camera_id),
+                title=variant["title"],
+                accent_color=variant["accent_color"],
+                pedestrian_count=variant["pedestrian_count"],
+                speed_offset=variant["speed_offset"],
+            )
+
     async def seed_cameras(self) -> list[Camera]:
-        stream_url = f"{settings.public_base_url}/media/{self._stream_path().name}"
         cameras = [
             Camera(
                 **seed,
-                stream_url=stream_url,
+                stream_url=f"{settings.public_base_url}/media/{self._stream_path(seed['camera_id']).name}",
                 status="active",
             )
             for seed in CAMERA_SEED
@@ -69,13 +116,13 @@ class CameraService:
         camera = await self.get_camera(camera_id)
         if not camera:
             return None
-        stream_path = self._stream_path()
+        stream_path = self._stream_path(camera_id)
         return StreamInfo(
             camera_id=camera.camera_id,
             zone=camera.zone,
             stream_url=f"{settings.public_base_url}/media/{stream_path.name}",
             media_type="video/webm" if stream_path.suffix == ".webm" else "video/mp4",
-            mode=f"looped_synthetic_{stream_path.suffix.lstrip('.')}",
+            mode=f"looped_synthetic_{camera.camera_id}_{stream_path.suffix.lstrip('.')}",
             playable=playable,
             note=None
             if playable
@@ -83,7 +130,17 @@ class CameraService:
         )
 
     @staticmethod
-    def _stream_path():
-        if settings.synthetic_webm_path.exists() and settings.synthetic_webm_path.stat().st_size > 0:
+    def _camera_webm_path(camera_id: str) -> Path:
+        return settings.media_dir / f"synthetic_{camera_id}.webm"
+
+    @classmethod
+    def _stream_path(cls, camera_id: str) -> Path:
+        camera_webm_path = cls._camera_webm_path(camera_id)
+        if camera_webm_path.exists() and camera_webm_path.stat().st_size > 0:
+            return camera_webm_path
+        if (
+            settings.synthetic_webm_path.exists()
+            and settings.synthetic_webm_path.stat().st_size > 0
+        ):
             return settings.synthetic_webm_path
         return settings.synthetic_video_path
