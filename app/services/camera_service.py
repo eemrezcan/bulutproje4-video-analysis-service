@@ -82,17 +82,19 @@ class CameraService:
     def __init__(self, repository: CameraRepository) -> None:
         self.repository = repository
 
-    async def ensure_stream_media(self) -> None:
+    async def ensure_stream_media(self) -> bool:
+        ready = False
         for seed in CAMERA_SEED:
             camera_id = seed["camera_id"]
             variant = CAMERA_STREAM_VARIANTS[camera_id]
-            ensure_synthetic_video(
+            ready = ensure_synthetic_video(
                 self._camera_webm_path(camera_id),
                 title=variant["title"],
                 accent_color=variant["accent_color"],
                 pedestrian_count=variant["pedestrian_count"],
                 speed_offset=variant["speed_offset"],
-            )
+            ) or ready
+        return ready
 
     async def seed_cameras(self) -> list[Camera]:
         cameras = [

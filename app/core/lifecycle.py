@@ -1,4 +1,3 @@
-from app.analyzer.synthetic_video import ensure_synthetic_video
 from app.analyzer.worker import AnalyzerWorker
 from app.core.config import settings
 from app.repositories.analysis_repository import AnalysisRepository
@@ -20,10 +19,7 @@ async def startup() -> None:
     global synthetic_video_ready
     await wait_until_ready()
     await create_tables()
-    mp4_ready = ensure_synthetic_video(settings.synthetic_video_path)
-    webm_ready = ensure_synthetic_video(settings.synthetic_webm_path)
-    synthetic_video_ready = webm_ready or mp4_ready
-    await camera_service.ensure_stream_media()
+    synthetic_video_ready = await camera_service.ensure_stream_media()
     await camera_service.seed_cameras()
     if settings.analyzer_autostart:
         await analyzer_worker.start()
