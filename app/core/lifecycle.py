@@ -24,7 +24,8 @@ async def startup() -> None:
     webm_ready = ensure_synthetic_video(settings.synthetic_webm_path)
     synthetic_video_ready = webm_ready or mp4_ready
     await camera_service.seed_cameras()
-    await analyzer_worker.start()
+    if settings.analyzer_autostart:
+        await analyzer_worker.start()
 
 
 async def shutdown() -> None:

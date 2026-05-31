@@ -34,4 +34,10 @@ app.add_middleware(
 )
 
 app.mount("/media", StaticFiles(directory=str(settings.media_dir)), name="media")
+app.mount(
+    "/api/video/media",
+    StaticFiles(directory=str(settings.media_dir)),
+    name="api-video-media",
+)
 app.include_router(router)
+app.include_router(router, prefix="/api/video")

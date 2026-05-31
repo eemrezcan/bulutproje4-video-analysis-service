@@ -2,6 +2,13 @@ import os
 from pathlib import Path
 
 
+def _env_bool(name: str, default: bool) -> bool:
+    value = os.getenv(name)
+    if value is None:
+        return default
+    return value.strip().lower() in {"1", "true", "yes", "on"}
+
+
 class Settings:
     service_name: str = os.getenv("SERVICE_NAME", "video-analysis-service")
     aws_region: str = os.getenv("AWS_REGION", "eu-central-1")
@@ -17,6 +24,7 @@ class Settings:
     analyzer_interval_seconds: float = float(
         os.getenv("ANALYZER_INTERVAL_SECONDS", "5")
     )
+    analyzer_autostart: bool = _env_bool("ANALYZER_AUTOSTART", True)
     dynamodb_ready_timeout_seconds: int = int(
         os.getenv("DYNAMODB_READY_TIMEOUT_SECONDS", "60")
     )
